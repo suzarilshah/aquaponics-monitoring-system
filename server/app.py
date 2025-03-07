@@ -60,18 +60,26 @@ def health():
         "chat_history_dir": CHAT_HISTORY_DIR.exists()
     }
     
-    # Check API key
-    api_key_status = bool(os.environ.get('O1_API_KEY'))
+    # Check API keys
+    api_keys_status = {
+        "o1_api_key": bool(os.environ.get('O1_API_KEY')),
+        "deepseek_api_key": bool(os.environ.get('DEEPSEEK_API_KEY'))
+    }
+    
+    # For health check, we consider the system healthy if at least one API key is available
+    # since our models can fall back to mock responses
+    any_api_key_available = any(api_keys_status.values())
     
     # Overall status
-    is_healthy = all(health_status.values()) and api_key_status
+    is_healthy = all(health_status.values()) and any_api_key_available
     
     return jsonify({
         "status": "healthy" if is_healthy else "unhealthy",
         "timestamp": datetime.utcnow().isoformat(),
         "checks": {
             "data_directories": health_status,
-            "api_key_configured": api_key_status
+            "api_keys": api_keys_status,
+            "any_api_key_available": any_api_key_available
         }
     }), 200 if is_healthy else 503
 
@@ -108,7 +116,13 @@ if __name__ == '__main__':
     
     # Validate environment
     if not os.environ.get('O1_API_KEY'):
-        print("Warning: O1_API_KEY not set. API calls will fail.")
+        print("Warning: O1_API_KEY not set. O1 model will use mock responses.")
+        
+    if not os.environ.get('DEEPSEEK_API_KEY'):
+        print("Warning: DEEPSEEK_API_KEY not set. Deepseek model will use mock responses.")
+        
+    if not (os.environ.get('O1_API_KEY') or os.environ.get('DEEPSEEK_API_KEY')):
+        print("Warning: No API keys set. All AI models will use mock responses.")
     
     # Start server
     app.run(host='0.0.0.0', port=port, debug=debug)
