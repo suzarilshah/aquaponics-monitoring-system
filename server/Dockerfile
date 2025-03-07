@@ -24,6 +24,9 @@ RUN pip install --no-cache-dir -r requirements.txt
 # Copy the server application
 COPY . .
 
+# Create necessary directories for data persistence
+RUN mkdir -p /app/data/analysis /app/logs
+
 # Expose port 6789
 EXPOSE 6789
 

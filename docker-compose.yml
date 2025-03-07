@@ -25,8 +25,10 @@ services:
     environment:
       - FLASK_ENV=production
       - O1_API_KEY=${O1_API_KEY}
+      - DEEPSEEK_API_KEY=${DEEPSEEK_API_KEY}
     volumes:
       - ./server/data:/app/data  # Mount data directory for persistence
+      - ./server/logs:/app/logs  # Mount logs directory for debugging
     restart: unless-stopped
     healthcheck:
       test: ["CMD", "curl", "-f", "http://localhost:6789/health"]
