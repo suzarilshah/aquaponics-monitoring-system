@@ -24,7 +24,7 @@ RUN pip install --no-cache-dir -r requirements.txt \
 
 # Copy the rest of the application
 COPY server/ server/
-COPY client/build/ client/build/
+# No need to copy client/build as it's served separately
 
 # Set the working directory to server
 WORKDIR /app/server
