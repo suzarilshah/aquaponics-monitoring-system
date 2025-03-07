@@ -1,10 +1,6 @@
 import apiClient from './apiClient';
 
 class ChatbotService {
-  constructor() {
-    this.apiUrl = process.env.REACT_APP_API_URL || 'http://localhost:6789/api';
-  }
-
   /**
    * Send a message to the chatbot
    * @param {string} message - User message
@@ -13,14 +9,21 @@ class ChatbotService {
    */
   async sendMessage(message, sessionId = null) {
     try {
-      const response = await apiClient.post(`${this.apiUrl}/chatbot/send`, {
+      const response = await apiClient.post('/chatbot/send', {
         message,
-        sessionId
+        sessionId,
+        telemetryData: await this.getLatestTelemetry() // Include latest telemetry for context
       });
       return response.data;
     } catch (error) {
       console.error('Error sending message to chatbot:', error);
-      throw new Error(error.response?.data?.message || 'Failed to send message to chatbot');
+      if (error.response?.status === 429) {
+        throw new Error('Rate limit exceeded. Please wait a moment before sending another message.');
+      }
+      throw new Error(
+        error.response?.data?.message || 
+        'Unable to process your message. Please try again later.'
+      );
     }
   }
 
@@ -31,11 +34,45 @@ class ChatbotService {
    */
   async getChatHistory(sessionId) {
     try {
-      const response = await apiClient.get(`${this.apiUrl}/chatbot/history/${sessionId}`);
+      const response = await apiClient.get(`/chatbot/history/${sessionId}`);
       return response.data;
     } catch (error) {
       console.error('Error fetching chat history:', error);
-      throw new Error(error.response?.data?.message || 'Failed to fetch chat history');
+      throw new Error(
+        error.response?.data?.message || 
+        'Unable to load chat history. Please refresh the page.'
+      );
+    }
+  }
+
+  /**
+   * Get latest telemetry data for context
+   * @returns {Promise<Object>} - Latest telemetry data
+   */
+  async getLatestTelemetry() {
+    try {
+      const response = await apiClient.get('/telemetry/latest');
+      return response.data;
+    } catch (error) {
+      console.warn('Could not fetch latest telemetry for context:', error);
+      return null; // Continue without telemetry data
+    }
+  }
+
+  /**
+   * Clear chat history for a session
+   * @param {string} sessionId - Chat session ID
+   * @returns {Promise<void>}
+   */
+  async clearHistory(sessionId) {
+    try {
+      await apiClient.delete(`/chatbot/history/${sessionId}`);
+    } catch (error) {
+      console.error('Error clearing chat history:', error);
+      throw new Error(
+        error.response?.data?.message || 
+        'Unable to clear chat history. Please try again.'
+      );
     }
   }
 }
