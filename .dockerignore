@@ -11,6 +11,7 @@ __pycache__
 *.so
 .Python
 env/
+venv/
 build/
 develop-eggs/
 dist/
@@ -19,6 +20,18 @@ eggs/
 .eggs/
 lib/
 lib64/
+
+# GitHub specific
+.git
+.github
+
+# Environment and sensitive information
+.env
+*.log
+
+# IDE specific
+.vscode
+.idea
 parts/
 sdist/
 var/

@@ -258,6 +258,62 @@ This project includes a script to build and publish Docker images to Docker Hub:
 
 4. Users can then pull and run the images using the instructions in the "Pull from Docker Hub" section.
 
+## Using GitHub Container Registry
+
+You can also pull the Docker images directly from GitHub Container Registry:
+
+1. Create a `docker-compose.yml` file with the following content:
+   ```yaml
+   version: '3.8'
+
+   services:
+     client:
+       image: ghcr.io/suzarilshah/aquaponics-monitoring-system-client:latest
+       ports:
+         - "80:80"
+       depends_on:
+         - server
+       restart: always
+       healthcheck:
+         test: ["CMD", "curl", "-f", "http://localhost"]
+         interval: 30s
+         timeout: 10s
+         retries: 3
+         start_period: 40s
+
+     server:
+       image: ghcr.io/suzarilshah/aquaponics-monitoring-system-server:latest
+       ports:
+         - "6789:6789"
+       environment:
+         - FLASK_ENV=production
+         - O1_API_KEY=your_o1_api_key_here  # Replace with your API key
+         - DEEPSEEK_API_KEY=your_deepseek_api_key_here  # Replace with your API key
+       volumes:
+         - aquaponics_data:/app/data
+         - aquaponics_logs:/app/logs
+       restart: always
+       healthcheck:
+         test: ["CMD", "curl", "-f", "http://localhost:6789/health"]
+         interval: 30s
+         timeout: 10s
+         retries: 3
+         start_period: 40s
+
+   volumes:
+     aquaponics_data:
+     aquaponics_logs:
+   ```
+
+2. Update the API keys in the file with your own keys
+
+3. Run the application:
+   ```bash
+   docker-compose up -d
+   ```
+
+4. Access the application at http://localhost
+
 ## Contributing
 
 1. Fork the repository
