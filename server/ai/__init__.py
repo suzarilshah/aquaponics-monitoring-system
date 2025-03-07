@@ -1,0 +1,3 @@
+"""
+Aquaponics AI Analysis Module
+"""
