@@ -1,5 +1,5 @@
 # Build stage
-FROM node:16-alpine as builder
+FROM node:18-alpine as builder
 
 # Set working directory
 WORKDIR /app
@@ -7,14 +7,16 @@ WORKDIR /app
 # Copy package files
 COPY package*.json ./
 
-# Install dependencies
-RUN npm install
+# Install dependencies with increased memory limit and production flag
+RUN npm config set registry https://registry.npmjs.org/ \
+    && npm config set fetch-retry-maxtimeout 600000 \
+    && NODE_OPTIONS="--max-old-space-size=4096" npm install --production=false
 
 # Copy source code
 COPY . .
 
-# Build the application
-RUN npm run build
+# Build the application with increased memory limit
+RUN NODE_OPTIONS="--max-old-space-size=4096" npm run build
 
 # Production stage
 FROM nginx:alpine
