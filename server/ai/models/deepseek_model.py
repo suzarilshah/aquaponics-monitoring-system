@@ -12,8 +12,9 @@ class DeepseekModel:
     def __init__(self, api_key=None):
         """Initialize the Deepseek model with API key."""
         self.api_key = api_key or os.environ.get("DEEPSEEK_API_KEY")
-        self.api_url = "https://api.deepseek.com/v1/chat/completions"
-        self.model = "deepseek-chat"
+        self.api_base = "https://suzarilshah.services.ai.azure.com/models/chat/completions?api-version=2024-05-01-preview"
+        #self.api_url = "https://api.deepseek.com/v1/chat/completions"
+        self.model = "deepseek-r1"
         self.system_prompt = DEEPSEEK_SYSTEM_PROMPT
         
         # Check if API key is available
@@ -100,15 +101,14 @@ Based on this data, please provide analysis and recommendations in the format sp
             return self._get_mock_response()
         
         try:
-            # Deepseek API headers
+            # Azure API headers
             headers = {
-                "Authorization": f"Bearer {self.api_key}",
+                "api-key": self.api_key,  # Azure uses api-key instead of Bearer token
                 "Content-Type": "application/json"
             }
             
-            # Deepseek API payload
+            # Azure API payload
             payload = {
-                "model": self.model,
                 "messages": [
                     {"role": "system", "content": self.system_prompt},
                     {"role": "user", "content": user_message}
@@ -123,7 +123,7 @@ Based on this data, please provide analysis and recommendations in the format sp
             
             for attempt in range(max_retries):
                 try:
-                    response = requests.post(self.api_url, headers=headers, json=payload, timeout=30)
+                    response = requests.post(self.api_base, headers=headers, json=payload, timeout=30)
                     response.raise_for_status()
                     
                     # Parse JSON response
