@@ -4,7 +4,7 @@ Flask-CORS==4.0.0
 gunicorn==21.2.0
 
 # HTTP and Environment
-requests==2.31.0
+requests==2.32.2
 python-dotenv==1.0.0
 
 # Data Processing
