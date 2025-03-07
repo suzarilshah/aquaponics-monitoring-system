@@ -30,7 +30,25 @@ An AI-powered monitoring system for aquaponics, focusing on goldfish and spearmi
    docker-compose up --build
    ```
 
-4. Access the application at `http://localhost:6789`
+4. Access the application:
+   - Frontend: `http://localhost`
+   - Backend API: `http://localhost:6789`
+
+## Docker Architecture
+
+The application is containerized using a multi-container setup:
+
+### Client Container
+- Built with Node.js and served through Nginx
+- Handles static file serving and API proxying
+- Exposed on port 80
+- Includes health checks and automatic restarts
+
+### Server Container
+- Python Flask application
+- Handles API requests and AI processing
+- Exposed on port 6789
+- Includes data persistence through Docker volumes
 
 ## Development Setup
 
@@ -46,12 +64,12 @@ An AI-powered monitoring system for aquaponics, focusing on goldfish and spearmi
    npm install
    ```
 
-3. Build the client:
+3. Run the client in development mode:
    ```bash
-   npm run build
+   npm start
    ```
 
-4. Run the server:
+4. Run the server in development mode:
    ```bash
    cd ../server
    O1_API_KEY=your_api_key_here FLASK_ENV=development python app.py
@@ -73,6 +91,39 @@ An AI-powered monitoring system for aquaponics, focusing on goldfish and spearmi
 - Height: 20-60cm
 - Growth Rate: 0.8-1.5cm/day
 - EC: 1.2-2.0 mS/cm
+
+## Docker Commands
+
+### View Logs
+```bash
+# View all container logs
+docker-compose logs -f
+
+# View specific service logs
+docker-compose logs -f client
+docker-compose logs -f server
+```
+
+### Container Management
+```bash
+# Stop containers
+docker-compose down
+
+# Rebuild and start containers
+docker-compose up --build
+
+# Start in detached mode
+docker-compose up -d
+```
+
+### Health Checks
+```bash
+# Check client health
+curl http://localhost/health
+
+# Check server health
+curl http://localhost:6789/health
+```
 
 ## Contributing
 
