@@ -4,14 +4,11 @@ FROM node:16 as builder
 # Set working directory
 WORKDIR /app
 
-# Copy package files
-COPY package*.json ./
+# Copy everything at once to ensure package.json is included
+COPY . .
 
 # Install dependencies
 RUN npm install
-
-# Copy source code
-COPY . .
 
 # Build the application
 RUN npm run build
