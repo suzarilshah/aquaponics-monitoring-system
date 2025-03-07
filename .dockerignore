@@ -1,0 +1,67 @@
+# Node.js
+node_modules
+npm-debug.log
+yarn-debug.log
+yarn-error.log
+
+# Python
+__pycache__
+*.py[cod]
+*$py.class
+*.so
+.Python
+env/
+build/
+develop-eggs/
+dist/
+downloads/
+eggs/
+.eggs/
+lib/
+lib64/
+parts/
+sdist/
+var/
+wheels/
+*.egg-info/
+.installed.cfg
+*.egg
+
+# Development
+.git
+.gitignore
+.env
+.env.local
+.env.development
+.env.test
+.env.production
+*.md
+!README.md
+.vscode/
+.idea/
+
+# Docker
+Dockerfile*
+docker-compose*
+.docker
+
+# Data and logs
+*.log
+data/
+logs/
+server/data/*
+!server/data/.gitkeep
+
+# Testing
+coverage/
+.coverage
+.pytest_cache/
+htmlcov/
+.tox/
+.nox/
+.hypothesis/
+.pytest_cache/
+
+# System
+.DS_Store
+Thumbs.db
