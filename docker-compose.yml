@@ -1,18 +1,39 @@
 version: '3.8'
 
 services:
-  aquaponics-app:
-    build: .
+  client:
+    build:
+      context: ./client
+      dockerfile: Dockerfile
+    ports:
+      - "80:80"
+    depends_on:
+      - server
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+
+  server:
+    build:
+      context: ./server
+      dockerfile: Dockerfile
     ports:
       - "6789:6789"
     environment:
       - FLASK_ENV=production
-      - O1_API_KEY=${O1_API_KEY}  # Will be taken from .env file
+      - O1_API_KEY=${O1_API_KEY}
     volumes:
-      - ./server/data:/app/server/data  # Mount data directory for persistence
+      - ./server/data:/app/data  # Mount data directory for persistence
     restart: unless-stopped
     healthcheck:
       test: ["CMD", "curl", "-f", "http://localhost:6789/health"]
       interval: 30s
       timeout: 10s
       retries: 3
+
+networks:
+  default:
+    driver: bridge
