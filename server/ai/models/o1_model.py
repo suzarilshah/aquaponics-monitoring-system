@@ -14,7 +14,7 @@ class O1Model:
         self.api_key = api_key or os.environ.get("O1_API_KEY")
         
         # Azure OpenAI API configuration
-        self.api_url = "https://api.azure.com/openai/deployments/o1-mini/chat/completions?api-version=2023-12-01-preview"
+        self.api_base = "https://suzarilshah.services.ai.azure.com/openai/deployments/o1-mini/chat/completions?api-version=2024-05-01-preview"
         self.model = "o1-mini"
         self.system_prompt = O1_SYSTEM_PROMPT
         
@@ -115,7 +115,7 @@ Please validate these results, provide confidence scores, and enhance the recomm
             
             for attempt in range(max_retries):
                 try:
-                    response = requests.post(self.api_url, headers=headers, json=payload, timeout=30)
+                    response = requests.post(self.api_base, headers=headers, json=payload, timeout=30)
                     response.raise_for_status()
                     
                     # Parse JSON response
