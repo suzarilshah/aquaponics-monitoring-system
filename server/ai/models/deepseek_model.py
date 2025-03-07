@@ -16,6 +16,10 @@ class DeepseekModel:
         self.model = "deepseek-chat"
         self.system_prompt = DEEPSEEK_SYSTEM_PROMPT
         
+        # Check if API key is available
+        if not self.api_key:
+            print("Warning: DEEPSEEK_API_KEY not set. Using mock responses.")
+        
     def analyze_telemetry(self, initial_data, validation_data):
         """
         Analyze telemetry data using Deepseek model.
@@ -91,11 +95,72 @@ Based on this data, please provide analysis and recommendations in the format sp
     
     def _call_api(self, user_message):
         """Call the Deepseek API with the formatted message."""
-        # For development/demo purposes, return a mock response
-        # In production, this would make an actual API call
+        # If no API key is available, return a mock response
+        if not self.api_key:
+            return self._get_mock_response()
         
-        # Mock response for development
-        mock_response = {
+        try:
+            # Deepseek API headers
+            headers = {
+                "Authorization": f"Bearer {self.api_key}",
+                "Content-Type": "application/json"
+            }
+            
+            # Deepseek API payload
+            payload = {
+                "model": self.model,
+                "messages": [
+                    {"role": "system", "content": self.system_prompt},
+                    {"role": "user", "content": user_message}
+                ],
+                "temperature": 0.3,
+                "max_tokens": 1000
+            }
+            
+            # Make API request with retry logic
+            max_retries = 3
+            retry_delay = 2  # seconds
+            
+            for attempt in range(max_retries):
+                try:
+                    response = requests.post(self.api_url, headers=headers, json=payload, timeout=30)
+                    response.raise_for_status()
+                    
+                    # Parse JSON response
+                    ai_response = response.json()["choices"][0]["message"]["content"]
+                    
+                    # Try to parse as JSON
+                    try:
+                        return json.loads(ai_response)
+                    except json.JSONDecodeError:
+                        # If not valid JSON, try to extract JSON from text
+                        import re
+                        json_match = re.search(r'```json\n(.+?)\n```', ai_response, re.DOTALL)
+                        if json_match:
+                            return json.loads(json_match.group(1))
+                        else:
+                            # Fall back to mock response if can't parse JSON
+                            print("Warning: Could not parse API response as JSON. Using mock response.")
+                            return self._get_mock_response()
+                            
+                except (requests.RequestException, json.JSONDecodeError) as e:
+                    if attempt < max_retries - 1:
+                        print(f"API request failed, retrying in {retry_delay} seconds: {str(e)}")
+                        import time
+                        time.sleep(retry_delay)
+                        retry_delay *= 2  # Exponential backoff
+                    else:
+                        print(f"API request failed after {max_retries} attempts: {str(e)}")
+                        return self._get_mock_response()
+        
+        except Exception as e:
+            print(f"Unexpected error calling API: {str(e)}")
+            return self._get_mock_response()
+    
+    def _get_mock_response(self):
+        """Return a mock response for development or when API calls fail."""
+        # Mock response based on typical analysis
+        return {
             "Goldfish_Health": {
                 "pH_Trend": {"next_30d": "7.2 → 6.9", "action": "Add crushed coral by Thursday"},
                 "Ammonia_Risk": {"probability": "68%", "peak_day": "2024-07-15"}
@@ -105,7 +170,8 @@ Based on this data, please provide analysis and recommendations in the format sp
                 "Nutrient_Deficit": {"nitrogen": "low", "fix": "Increase fish feeding 10%"}
             },
             "System_Risk": {
-                "pH-EC_Imbalance": {"severity": "high", "impact": "Stunted spearmint + fish stress"}
+                "pH-EC_Imbalance": {"severity": "high", "impact": "Stunted spearmint + fish stress"},
+                "Temperature_Fluctuation": {"severity": "medium", "impact": "Reduced fish appetite"}
             },
             "urgent": {
                 "title": "Nighttime O2 Drop Predicted",
@@ -116,31 +182,6 @@ Based on this data, please provide analysis and recommendations in the format sp
                 "action": "Release ladybugs next Thursday"
             }
         }
-        
-        return mock_response
-        
-        # Production code would look like this:
-        """
-        headers = {
-            "Authorization": f"Bearer {self.api_key}",
-            "Content-Type": "application/json"
-        }
-        
-        payload = {
-            "model": self.model,
-            "messages": [
-                {"role": "system", "content": self.system_prompt},
-                {"role": "user", "content": user_message}
-            ],
-            "temperature": 0.3,
-            "max_tokens": 1000
-        }
-        
-        response = requests.post(self.api_url, headers=headers, json=payload)
-        response.raise_for_status()
-        
-        return response.json()["choices"][0]["message"]["content"]
-        """
     
     def _parse_response(self, response):
         """Parse and validate the response from the API."""

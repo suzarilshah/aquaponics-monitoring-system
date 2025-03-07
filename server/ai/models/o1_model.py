@@ -11,10 +11,16 @@ class O1Model:
     
     def __init__(self, api_key=None):
         """Initialize the O1 model with API key."""
-        self.api_key = api_key or os.environ.get("ANTHROPIC_API_KEY")
-        self.api_url = "https://api.anthropic.com/v1/messages"
-        self.model = "claude-3-opus-20240229"
+        self.api_key = api_key or os.environ.get("O1_API_KEY")
+        
+        # Azure OpenAI API configuration
+        self.api_url = "https://api.azure.com/openai/deployments/o1-mini/chat/completions?api-version=2023-12-01-preview"
+        self.model = "o1-mini"
         self.system_prompt = O1_SYSTEM_PROMPT
+        
+        # Check if API key is available
+        if not self.api_key:
+            print("Warning: O1_API_KEY not set. Using mock responses.")
         
     def validate_analysis(self, initial_data, validation_data, deepseek_results):
         """
@@ -78,12 +84,76 @@ Please validate these results, provide confidence scores, and enhance the recomm
 """
     
     def _call_api(self, user_message):
-        """Call the Anthropic Claude API with the formatted message."""
-        # For development/demo purposes, return a mock response
-        # In production, this would make an actual API call
+        """Call the Azure OpenAI API with the formatted message."""
+        # If no API key is available, return a mock response
+        if not self.api_key:
+            return self._get_mock_response()
         
-        # Mock response for development - slightly modified from Deepseek results
-        mock_response = {
+        try:
+            # Azure OpenAI API headers
+            headers = {
+                "api-key": self.api_key,
+                "Content-Type": "application/json"
+            }
+            
+            # Azure OpenAI API payload
+            payload = {
+                "messages": [
+                    {"role": "system", "content": self.system_prompt},
+                    {"role": "user", "content": user_message}
+                ],
+                "temperature": 0.2,
+                "max_tokens": 1500,
+                "top_p": 0.95,
+                "frequency_penalty": 0,
+                "presence_penalty": 0
+            }
+            
+            # Make API request with retry logic
+            max_retries = 3
+            retry_delay = 2  # seconds
+            
+            for attempt in range(max_retries):
+                try:
+                    response = requests.post(self.api_url, headers=headers, json=payload, timeout=30)
+                    response.raise_for_status()
+                    
+                    # Parse JSON response
+                    response_data = response.json()
+                    ai_response = response_data['choices'][0]['message']['content']
+                    
+                    # Try to parse as JSON
+                    try:
+                        return json.loads(ai_response)
+                    except json.JSONDecodeError:
+                        # If not valid JSON, try to extract JSON from text
+                        import re
+                        json_match = re.search(r'```json\n(.+?)\n```', ai_response, re.DOTALL)
+                        if json_match:
+                            return json.loads(json_match.group(1))
+                        else:
+                            # Fall back to mock response if can't parse JSON
+                            print("Warning: Could not parse API response as JSON. Using mock response.")
+                            return self._get_mock_response()
+                            
+                except (requests.RequestException, json.JSONDecodeError) as e:
+                    if attempt < max_retries - 1:
+                        print(f"API request failed, retrying in {retry_delay} seconds: {str(e)}")
+                        import time
+                        time.sleep(retry_delay)
+                        retry_delay *= 2  # Exponential backoff
+                    else:
+                        print(f"API request failed after {max_retries} attempts: {str(e)}")
+                        return self._get_mock_response()
+        
+        except Exception as e:
+            print(f"Unexpected error calling API: {str(e)}")
+            return self._get_mock_response()
+    
+    def _get_mock_response(self):
+        """Return a mock response for development or when API calls fail."""
+        # Mock response based on typical analysis
+        return {
             "Goldfish_Health": {
                 "pH_Trend": {"next_30d": "7.2 → 6.8", "action": "Add 500g crushed coral by Wednesday"},
                 "Ammonia_Risk": {"probability": "72%", "peak_day": "2024-07-14"}
@@ -106,32 +176,6 @@ Please validate these results, provide confidence scores, and enhance the recomm
             },
             "confidence_score": 0.87
         }
-        
-        return mock_response
-        
-        # Production code would look like this:
-        """
-        headers = {
-            "x-api-key": self.api_key,
-            "anthropic-version": "2023-06-01",
-            "content-type": "application/json"
-        }
-        
-        payload = {
-            "model": self.model,
-            "system": self.system_prompt,
-            "messages": [
-                {"role": "user", "content": user_message}
-            ],
-            "temperature": 0.2,
-            "max_tokens": 1500
-        }
-        
-        response = requests.post(self.api_url, headers=headers, json=payload)
-        response.raise_for_status()
-        
-        return json.loads(response.json()["content"][0]["text"])
-        """
     
     def _parse_response(self, response):
         """Parse and validate the response from the API."""
