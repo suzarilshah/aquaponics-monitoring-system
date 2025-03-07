@@ -65,6 +65,8 @@ jobs:
         push: true
         tags: ${{ steps.meta-client.outputs.tags }}
         labels: ${{ steps.meta-client.outputs.labels }}
+        # Add a short timeout to ensure the build completes
+        timeout-minutes: 15
     
     - name: Create docker-compose.github.yml
       run: |
