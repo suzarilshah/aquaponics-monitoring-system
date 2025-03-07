@@ -1,0 +1,18 @@
+version: '3.8'
+
+services:
+  aquaponics-app:
+    build: .
+    ports:
+      - "6789:6789"
+    environment:
+      - FLASK_ENV=production
+      - O1_API_KEY=${O1_API_KEY}  # Will be taken from .env file
+    volumes:
+      - ./server/data:/app/server/data  # Mount data directory for persistence
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:6789/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
