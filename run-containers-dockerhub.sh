@@ -67,6 +67,10 @@ docker run -d \
   --health-start-period=40s \
   suzarilshah/aquaponics-monitoring-system-server:latest
 
+# Verify server is running before starting client
+echo -e "${YELLOW}Waiting for server to be ready...${NC}"
+sleep 10
+
 # Run the client container
 echo -e "${YELLOW}Starting client container...${NC}"
 docker run -d \
